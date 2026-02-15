@@ -23,5 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: Set version from tag
+        run: npm pkg set version=${GITHUB_REF#refs/tags/v}
+
       - name: Publish to npm (Trusted Publisher)
         run: npm publish --provenance --access public
