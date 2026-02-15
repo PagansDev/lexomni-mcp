@@ -1,6 +1,6 @@
 {
   "name": "lexomni-mcp",
-  "version": "0.0.0 -dev",
+  "version": "0.0.0-dev",
   "type": "module",
   "description": "MCP server for local knowledge management with MD and PDF indexing",
   "author": "PagansDev (Paulo Gabriel Neves Santos) <https://github.com/PagansDev>",
