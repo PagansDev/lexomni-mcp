@@ -6,7 +6,7 @@ import { buildIndex } from "../../indexing/indexer.js";
 
 export function buildIndexTool(server: McpServer) {
   server.registerTool(
-    "lexomni.buildIndex",
+    "lexomni_buildIndex",
     {
       description: "Gera/atualiza o índice SQLite FTS5 a partir de MDs e PDFs no _lexomni.",
       inputSchema: {

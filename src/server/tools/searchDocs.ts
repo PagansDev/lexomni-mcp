@@ -5,7 +5,7 @@ import { openDb } from "../../indexing/sqlite.js";
 
 export function searchDocsTool(server: McpServer) {
   server.registerTool(
-    "lexomni.searchDocs",
+    "lexomni_searchDocs",
     {
       description: "Busca por palavra-chave (FTS) nos documentos indexados.",
       inputSchema: {

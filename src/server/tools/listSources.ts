@@ -4,7 +4,7 @@ import { buildManifest } from "../../lexomni/manifest.js";
 
 export function listSourcesTool(server: McpServer) {
   server.registerTool(
-    "lexomni.listSources",
+    "lexomni_listSources",
     {
       description: "Lista MDs (user/agent) e PDFs (books) disponíveis no workspace _lexomni.",
       inputSchema: {}

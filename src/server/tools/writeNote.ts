@@ -7,7 +7,7 @@ import { assertSafeRelativePath, ensureInside } from "../../lexomni/security.js"
 
 export function writeNoteTool(server: McpServer) {
   server.registerTool(
-    "lexomni.writeNote",
+    "lexomni_writeNote",
     {
       description: "Cria/atualiza um markdown em _lexomni/agent (memória do agente).",
       inputSchema: {

@@ -5,7 +5,7 @@ import { openDb } from "../../indexing/sqlite.js";
 
 export function readDocTool(server: McpServer) {
   server.registerTool(
-    "lexomni.readDoc",
+    "lexomni_readDoc",
     {
       description: "Lê um trecho de um documento indexado (por chunkIndex).",
       inputSchema: {
