@@ -1,30 +1,42 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import * as z from "zod/v4";
-import { findWorkspace } from "../../lexomni/workspace.js";
-import { openDb } from "../../indexing/sqlite.js";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import * as z from 'zod/v4';
+import { openDb } from '../../indexing/sqlite.js';
+import { getWorkspace } from '../workspaceResolver.js';
 
 export function readDocTool(server: McpServer) {
   server.registerTool(
-    "lexomni_readDoc",
+    'lexomni_readDoc',
     {
-      description: "Lê um trecho de um documento indexado (por chunkIndex).",
+      description: 'Reads a chunk of an indexed document (by chunkIndex).',
       inputSchema: {
         docId: z.string().min(3),
         chunkIndex: z.number().int().min(0).optional(),
-        maxChars: z.number().int().min(200).max(20000).optional()
-      }
+        maxChars: z.number().int().min(200).max(20000).optional(),
+      },
     },
     async ({ docId, chunkIndex, maxChars }) => {
-      const ws = findWorkspace();
+      const ws = await getWorkspace(server);
       const db = openDb(ws);
 
       const idx = chunkIndex ?? 0;
       const row = db
-        .prepare(`SELECT docId, chunkIndex, lineStart, lineEnd, text FROM chunks WHERE docId = ? AND chunkIndex = ?`)
+        .prepare(
+          `SELECT docId, chunkIndex, lineStart, lineEnd, text FROM chunks WHERE docId = ? AND chunkIndex = ?`,
+        )
         .get(docId, idx);
 
       if (!row) {
-        return { content: [{ type: "text", text: JSON.stringify({ ok: false, error: "Chunk não encontrado." }) }] };
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                ok: false,
+                error: 'Chunk não encontrado.',
+              }),
+            },
+          ],
+        };
       }
 
       const limit = maxChars ?? 8000;
@@ -33,7 +45,7 @@ export function readDocTool(server: McpServer) {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(
               {
                 ok: true,
@@ -44,11 +56,11 @@ export function readDocTool(server: McpServer) {
                 text,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 }

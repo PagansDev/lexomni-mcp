@@ -39,7 +39,11 @@ export async function buildIndex(ws: LexomniWorkspace, docs: DocInfo[]) {
       deleteFts.run(it.doc.docId);
 
       for (const ch of it.chunks) {
-        insertChunk.run(ch);
+        insertChunk.run({
+          ...ch,
+          lineStart: ch.lineStart ?? null,
+          lineEnd: ch.lineEnd ?? null,
+        });
         insertFts.run({ docId: it.doc.docId, chunkIndex: ch.chunkIndex, text: ch.text });
       }
     }

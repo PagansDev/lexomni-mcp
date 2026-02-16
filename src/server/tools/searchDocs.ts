@@ -1,21 +1,21 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import * as z from "zod/v4";
-import { findWorkspace } from "../../lexomni/workspace.js";
-import { openDb } from "../../indexing/sqlite.js";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import * as z from 'zod/v4';
+import { openDb } from '../../indexing/sqlite.js';
+import { getWorkspace } from '../workspaceResolver.js';
 
 export function searchDocsTool(server: McpServer) {
   server.registerTool(
-    "lexomni_searchDocs",
+    'lexomni_searchDocs',
     {
-      description: "Busca por palavra-chave (FTS) nos documentos indexados.",
+      description: 'Searches indexed documents by keyword (FTS).',
       inputSchema: {
         query: z.string().min(2),
-        sources: z.array(z.enum(["user", "agent", "books"])).optional(),
-        limit: z.number().int().min(1).max(50).optional()
-      }
+        sources: z.array(z.enum(['user', 'agent', 'books'])).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      },
     },
     async ({ query, sources, limit }) => {
-      const ws = findWorkspace();
+      const ws = await getWorkspace(server);
       const db = openDb(ws);
       const lim = limit ?? 10;
 
@@ -26,7 +26,7 @@ export function searchDocsTool(server: McpServer) {
           FROM chunks_fts f
           WHERE chunks_fts MATCH ?
           LIMIT ?
-        `
+        `,
         )
         .all(query, lim * 3);
 
@@ -37,20 +37,30 @@ export function searchDocsTool(server: McpServer) {
       }));
 
       if (hits.length > 0) {
-        const placeholders = hits.map(() => "?").join(",");
+        const placeholders = hits.map(() => '?').join(',');
         const docRows = db
-          .prepare(`SELECT docId, source, relPath FROM documents WHERE docId IN (${placeholders})`)
+          .prepare(
+            `SELECT docId, source, relPath FROM documents WHERE docId IN (${placeholders})`,
+          )
           .all(...hits.map((h) => h.docId));
 
         const map = new Map(docRows.map((d: any) => [d.docId, d]));
         hits = hits
-          .map((h) => ({ ...h, source: map.get(h.docId)?.source, relPath: map.get(h.docId)?.relPath }))
+          .map((h) => ({
+            ...h,
+            source: map.get(h.docId)?.source,
+            relPath: map.get(h.docId)?.relPath,
+          }))
           .filter((h) => !sources?.length || sources.includes(h.source));
       }
 
       hits = hits.slice(0, lim);
 
-      return { content: [{ type: "text", text: JSON.stringify({ query, hits }, null, 2) }] };
-    }
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify({ query, hits }, null, 2) },
+        ],
+      };
+    },
   );
 }
