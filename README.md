@@ -8,13 +8,6 @@ MCP (Model Context Protocol) server for local knowledge management with Markdown
 
 ## English
 
-### Installation
-
-```bash
-npm install
-npm run build
-```
-
 ### Usage
 
 #### As a local MCP server
@@ -24,17 +17,44 @@ Lexomni MCP automatically discovers the `_lexomni` workspace in your project by 
 1. Configure your MCP client (e.g., Cursor):
 
 ```json
-{
-  "mcpServers": {
-    "lexomni": {
+"lexomni": {
       "command": "npx",
-      "args": ["lexomni-mcp"]
-    }
-  }
-}
+      "args": ["-y", "lexomni-mcp"],
+      "cwd": "/path/to/your/project", # (optional) only if needed
+      "env": {}
+    },
 ```
 
 > **Note:** Usually you don't need to define `cwd`; the MCP client typically uses the current workspace directory. Add `"cwd": "/path/to/your/project"` if needed.
+
+> **Note:** npx downloads and execute the package automatically, you don't need to install anything, but in those earlier releases is recomended to clone the repository and run in locally until I adress the issues.
+In that case, after you clone the repository, the configuration would be:
+
+#### wsl:
+```json
+"lexomni-local": {
+      "command": "wsl.exe",
+      "args": [
+        "-d", "distro-your.version", # e.g. : Ubuntu-24.04 
+        "--",
+        "bash", "-lc",
+        "npx -y /path/to/cloned/repository"
+      ]
+    }
+```
+
+#### Windows:
+```json
+"lexomni-local": {
+  "command": "cmd.exe",
+  "args": [
+    "/c",
+    "npx",
+    "-y",
+    "C:\\Users\\User\\Your\\Folders\\lexomni-mcp"
+  ]
+}
+```
 
 2. Add your documents:
    - `_lexomni/user/` - User markdown (guidelines, architecture, etc.)
@@ -44,8 +64,9 @@ Lexomni MCP automatically discovers the `_lexomni` workspace in your project by 
 The folder structure (`_lexomni/user`, `_lexomni/agent`, `_lexomni/books`, `_lexomni/index`) is created automatically on first run.
 
 ### Available Tools
+> Agent handles parameters on its own
 
-#### `lexomni.listSources`
+#### `lexomni_listSources`
 Lists all documents (MD and PDF) in the workspace.
 
 **Parameters:** none
@@ -59,13 +80,13 @@ Lists all documents (MD and PDF) in the workspace.
 }
 ```
 
-#### `lexomni.buildIndex`
+#### `lexomni_buildIndex`
 Indexes documents into SQLite FTS5 for fast search.
 
 **Parameters:**
 - `sources` (optional): array of `["user", "agent", "books"]`
 
-#### `lexomni.searchDocs`
+#### `lexomni_searchDocs`
 Keyword search across indexed documents.
 
 **Parameters:**
@@ -88,22 +109,37 @@ Keyword search across indexed documents.
   ]
 }
 ```
-
-#### `lexomni.readDoc`
-Reads a specific chunk of an indexed document.
-
-**Parameters:**
-- `docId` (required): document ID (e.g. "user:user/file.md")
-- `chunkIndex` (optional): chunk index (default 0)
-- `maxChars` (optional): character limit (200-20000, default 8000)
-
-#### `lexomni.writeNote`
-Creates or updates a markdown file in `_lexomni/agent`.
-
-**Parameters:**
-- `filename` (required): file name (e.g. "2026-02-15_summary.md")
-- `content` (required): markdown content
-- `mode` (optional): "overwrite" or "append" (default "overwrite")
+#### `lexomni_readDoc`
+- docId (required)
+- Type: string
+  Purpose: unique identifier of the document in the index.
+> Constraint: at least 3 characters.
+  Typical source: taken from a hit returned by lexomni_searchDocs.
+- chunkIndex (optional)
+  Type: integer
+  Minimum: 0
+  Purpose: which chunk (piece) of the document to read.
+  If omitted: usually defaults to the first chunk (0), depending on implementation.
+- maxChars (optional)
+  Type: integer
+  Range: 200–20000
+  Purpose: maximum number of characters of text to return for that chunk, useful to limit response size.
+  
+#### `lexomni_writeNote`
+- filename (required)
+  Type: string
+  Purpose: name of the markdown file to create or update in the agent’s notes area.
+> Constraint: at least 1 character.
+- content (required)
+  Type: string
+  Purpose: markdown content to write into the file.
+> Constraint: at least 1 character.
+- mode (optional)
+  Type: string
+  Allowed values:
+  "overwrite" – replaces the existing file content entirely.
+  "append" – appends content to the end of the existing file.
+  Default: "overwrite" if not specified.
 
 ### Security
 
@@ -124,7 +160,7 @@ _lexomni/               # In user's project
 
 ### Multilingual Strategy
 
-Lexomni does not translate text internally. To find docs in PT and EN:
+Lexomni does not translate text internally. To find docs in PT and EN for e.g. :
 
 1. Agent expands queries before searching:
    - "arquitetura em camadas" → also searches "layered architecture"
@@ -135,144 +171,6 @@ Lexomni does not translate text internally. To find docs in PT and EN:
    - Improves search quality over time
 
 ### Development
-
-```bash
-npm run build    # Build production
-npm run dev      # Watch mode
-npm start        # Run built server
-```
-
----
-
-## Português (PT-BR)
-
-### Instalação
-
-```bash
-npm install
-npm run build
-```
-
-### Uso
-
-#### Como servidor MCP local
-
-O Lexomni MCP descobre automaticamente o workspace `_lexomni` no projeto do usuário, subindo a árvore de diretórios a partir do `cwd`. Se não encontrar, cria a estrutura automaticamente.
-
-1. Configure no cliente MCP (ex.: Cursor):
-
-```json
-{
-  "mcpServers": {
-    "lexomni": {
-      "command": "npx",
-      "args": ["lexomni-mcp"]
-    }
-  }
-}
-```
-
-> **Nota:** Em geral não é preciso definir `cwd`; o cliente MCP costuma usar o diretório do projeto aberto. Se necessário, adicione `"cwd": "/caminho/para/seu/projeto"`.
-
-2. Adicione seus documentos:
-   - `_lexomni/user/` - Markdown do usuário (guidelines, arquitetura, etc.)
-   - `_lexomni/agent/` - Notas do agente (geradas automaticamente)
-   - `_lexomni/books/` - PDFs (livros, documentação, etc.)
-
-A estrutura de pastas (`_lexomni/user`, `_lexomni/agent`, `_lexomni/books`, `_lexomni/index`) é criada automaticamente na primeira execução.
-
-### Tools Disponíveis
-
-#### `lexomni.listSources`
-Lista todos os documentos (MD e PDF) disponíveis no workspace.
-
-**Parâmetros:** nenhum
-
-**Exemplo:**
-```json
-{
-  "workspace": "/path/to/project/_lexomni",
-  "count": 5,
-  "docs": [...]
-}
-```
-
-#### `lexomni.buildIndex`
-Indexa os documentos no SQLite FTS5 para busca rápida.
-
-**Parâmetros:**
-- `sources` (opcional): array de `["user", "agent", "books"]`
-
-#### `lexomni.searchDocs`
-Busca por palavra-chave nos documentos indexados.
-
-**Parâmetros:**
-- `query` (obrigatório): string mínimo 2 caracteres
-- `sources` (opcional): filtrar por fonte
-- `limit` (opcional): máximo de resultados (1-50, padrão 10)
-
-**Exemplo:**
-```json
-{
-  "query": "clean architecture",
-  "hits": [
-    {
-      "docId": "user:user/guidelines.md",
-      "chunkIndex": 0,
-      "snippet": "...about [clean] [architecture]...",
-      "source": "user",
-      "relPath": "user/guidelines.md"
-    }
-  ]
-}
-```
-
-#### `lexomni.readDoc`
-Lê um chunk específico de um documento indexado.
-
-**Parâmetros:**
-- `docId` (obrigatório): ID do documento (ex: "user:user/file.md")
-- `chunkIndex` (opcional): índice do chunk (padrão 0)
-- `maxChars` (opcional): limite de caracteres (200-20000, padrão 8000)
-
-#### `lexomni.writeNote`
-Cria ou atualiza um arquivo markdown em `_lexomni/agent`.
-
-**Parâmetros:**
-- `filename` (obrigatório): nome do arquivo (ex: "2026-02-15_resumo.md")
-- `content` (obrigatório): conteúdo markdown
-- `mode` (opcional): "overwrite" ou "append" (padrão "overwrite")
-
-### Segurança
-
-- Path traversal bloqueado (não permite `../`)
-- Acesso restrito ao workspace `_lexomni`
-- Escrita limitada apenas a `_lexomni/agent/`
-
-### Arquitetura
-
-```
-_lexomni/               # No projeto do usuário
-  user/                 # Guidelines, arquitetura (leitura)
-  agent/                # Notas do agente (escrita)
-  books/                # PDFs (leitura)
-  index/                # SQLite FTS5 (gerado)
-    lexomni.sqlite
-```
-
-### Estratégia Multilíngue
-
-O Lexomni não traduz texto internamente. Para encontrar documentação em PT e EN:
-
-1. O agente expande queries antes de buscar:
-   - "arquitetura em camadas" → também busca "layered architecture"
-   - "fila" → também busca "message queue", "job queue"
-
-2. Glossário vivo em `_lexomni/agent/glossary.md`:
-   - O agente aprende novos termos via web search
-   - Melhora a busca ao longo do tempo
-
-### Desenvolvimento
 
 ```bash
 npm run build    # Build production
