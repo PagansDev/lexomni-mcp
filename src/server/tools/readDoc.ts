@@ -1,9 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 import { openDb } from '../../indexing/database.js';
-import { buildIndex } from '../../indexing/indexer.js';
-import { buildManifest } from '../../lexomni/manifest.js';
 import { getWorkspace } from '../workspaceResolver.js';
+import { textContent } from './response.js';
+import { ensureIndexUpToDate } from '../../indexing/ensureIndex.js';
+import { READ_DOC_DEFAULT_MAX_CHARS, READ_DOC_MAX_CHARS } from '../../indexing/constants.js';
+import { ChunkRow } from '../../types/document.js';
 
 async function readChunk(ws: Awaited<ReturnType<typeof getWorkspace>>, docId: string, idx: number) {
   const db = await openDb(ws);
@@ -11,7 +13,7 @@ async function readChunk(ws: Awaited<ReturnType<typeof getWorkspace>>, docId: st
     .prepare(
       `SELECT docId, chunkIndex, lineStart, lineEnd, text FROM chunks WHERE docId = ? AND chunkIndex = ?`,
     )
-    .get(docId, idx);
+    .get(docId, idx) as ChunkRow | undefined;
 }
 
 export function readDocTool(server: McpServer) {
@@ -22,7 +24,7 @@ export function readDocTool(server: McpServer) {
       inputSchema: {
         docId: z.string().min(3),
         chunkIndex: z.number().int().min(0).optional(),
-        maxChars: z.number().int().min(200).max(20000).optional(),
+        maxChars: z.number().int().min(200).max(READ_DOC_MAX_CHARS).optional(),
       },
     },
     async ({ docId, chunkIndex, maxChars }) => {
@@ -31,46 +33,25 @@ export function readDocTool(server: McpServer) {
       let row = await readChunk(ws, docId, idx);
 
       if (!row) {
-        await buildIndex(ws, buildManifest(ws));
+        await ensureIndexUpToDate(ws);
         row = await readChunk(ws, docId, idx);
       }
 
       if (!row) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                ok: false,
-                error: 'Chunk não encontrado.',
-              }),
-            },
-          ],
-        };
+        return textContent({ ok: false, error: 'Chunk not found.' });
       }
 
-      const limit = maxChars ?? 8000;
-      const text = String((row as any).text).slice(0, limit);
+      const limit = maxChars ?? READ_DOC_DEFAULT_MAX_CHARS;
+      const text = row.text.slice(0, limit);
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                ok: true,
-                docId: (row as any).docId,
-                chunkIndex: (row as any).chunkIndex,
-                lineStart: (row as any).lineStart ?? null,
-                lineEnd: (row as any).lineEnd ?? null,
-                text,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      };
+      return textContent({
+        ok: true,
+        docId: row.docId,
+        chunkIndex: row.chunkIndex,
+        lineStart: row.lineStart ?? null,
+        lineEnd: row.lineEnd ?? null,
+        text,
+      });
     },
   );
 }

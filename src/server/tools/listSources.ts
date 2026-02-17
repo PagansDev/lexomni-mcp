@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { buildManifest } from '../../lexomni/manifest.js';
 import { getWorkspace } from '../workspaceResolver.js';
+import { textContent } from './response.js';
 
 export function listSourcesTool(server: McpServer) {
   server.registerTool(
@@ -14,18 +15,7 @@ export function listSourcesTool(server: McpServer) {
       const ws = await getWorkspace(server);
       const docs = buildManifest(ws);
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              { workspace: ws.root, count: docs.length, docs },
-              null,
-              2,
-            ),
-          },
-        ],
-      };
+      return textContent({ workspace: ws.root, count: docs.length, docs });
     },
   );
 }

@@ -17,31 +17,7 @@ function existsDir(p: string) {
   }
 }
 
-export function findWorkspace(startDir = process.cwd()): LexomniWorkspace {
-  let cur = path.resolve(startDir);
-
-  for (;;) {
-    const candidate = path.join(cur, '_lexomni');
-    if (existsDir(candidate)) {
-      const userDir = path.join(candidate, 'user');
-      const agentDir = path.join(candidate, 'agent');
-      const booksDir = path.join(candidate, 'books');
-      const indexDir = path.join(candidate, 'index');
-
-      fs.mkdirSync(userDir, { recursive: true });
-      fs.mkdirSync(agentDir, { recursive: true });
-      fs.mkdirSync(booksDir, { recursive: true });
-      fs.mkdirSync(indexDir, { recursive: true });
-
-      return { root: candidate, userDir, agentDir, booksDir, indexDir };
-    }
-
-    const parent = path.dirname(cur);
-    if (parent === cur) break;
-    cur = parent;
-  }
-
-  const root = path.join(path.resolve(startDir), '_lexomni');
+function ensureLexomniDirs(root: string): LexomniWorkspace {
   const userDir = path.join(root, 'user');
   const agentDir = path.join(root, 'agent');
   const booksDir = path.join(root, 'books');
@@ -53,4 +29,19 @@ export function findWorkspace(startDir = process.cwd()): LexomniWorkspace {
   fs.mkdirSync(indexDir, { recursive: true });
 
   return { root, userDir, agentDir, booksDir, indexDir };
+}
+
+export function findWorkspace(startDir = process.cwd()): LexomniWorkspace {
+  let cur = path.resolve(startDir);
+
+  for (;;) {
+    const candidate = path.join(cur, '_lexomni');
+    if (existsDir(candidate)) return ensureLexomniDirs(candidate);
+
+    const parent = path.dirname(cur);
+    if (parent === cur) break;
+    cur = parent;
+  }
+
+  return ensureLexomniDirs(path.join(path.resolve(startDir), '_lexomni'));
 }

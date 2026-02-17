@@ -4,6 +4,7 @@ import { openDb } from "./database.js";
 import { readMarkdownText } from "../parsers/md.js";
 import { readPdfText } from "../parsers/pdf.js";
 import { chunkMarkdownByLines, chunkTextByChars } from "./chunking.js";
+import { CHUNK_LINES_MD, CHUNK_CHARS_PDF } from "./constants.js";
 
 export async function buildIndex(ws: LexomniWorkspace, docs: DocInfo[]) {
   const db = await openDb(ws);
@@ -54,11 +55,11 @@ export async function buildIndex(ws: LexomniWorkspace, docs: DocInfo[]) {
   for (const doc of docs) {
     if (doc.type === "md") {
       const text = readMarkdownText(doc.path);
-      const chunks = chunkMarkdownByLines(text, 200).map((c) => ({ docId: doc.docId, ...c }));
+      const chunks = chunkMarkdownByLines(text, CHUNK_LINES_MD).map((c) => ({ docId: doc.docId, ...c }));
       prepared.push({ doc, chunks });
     } else {
       const text = await readPdfText(doc.path);
-      const chunks = chunkTextByChars(text, 6000).map((c) => ({ docId: doc.docId, ...c }));
+      const chunks = chunkTextByChars(text, CHUNK_CHARS_PDF).map((c) => ({ docId: doc.docId, ...c }));
       prepared.push({ doc, chunks });
     }
   }

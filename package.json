@@ -26,6 +26,7 @@
     "build": "tsup src/index.ts --format esm --dts --clean",
     "start": "node dist/index.js",
     "dev": "tsup src/index.ts --format esm --watch",
+    "test": "node --import tsx --test 'src/**/*.test.ts'",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -43,6 +44,7 @@
     "@types/node": "^22.10.2",
     "@types/pdf-parse": "^1.1.4",
     "tsup": "^8.3.5",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2"
   }
 }

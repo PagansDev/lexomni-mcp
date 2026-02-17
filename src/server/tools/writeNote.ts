@@ -7,6 +7,7 @@ import {
   ensureInside,
 } from '../../lexomni/security.js';
 import { getWorkspace } from '../workspaceResolver.js';
+import { textContent } from './response.js';
 
 export function writeNoteTool(server: McpServer) {
   server.registerTool(
@@ -39,18 +40,7 @@ export function writeNoteTool(server: McpServer) {
 
       const st = fs.statSync(abs);
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              { ok: true, path: abs, bytes: st.size, mtimeMs: st.mtimeMs },
-              null,
-              2,
-            ),
-          },
-        ],
-      };
+      return textContent({ ok: true, path: abs, bytes: st.size, mtimeMs: st.mtimeMs });
     },
   );
 }

@@ -3,6 +3,7 @@ import * as z from 'zod/v4';
 import { buildManifest } from '../../lexomni/manifest.js';
 import { buildIndex } from '../../indexing/indexer.js';
 import { getWorkspace } from '../workspaceResolver.js';
+import { textContent } from './response.js';
 
 export function buildIndexTool(server: McpServer) {
   server.registerTool(
@@ -20,14 +21,7 @@ export function buildIndexTool(server: McpServer) {
       if (sources?.length)
         docs = docs.filter((d) => sources.includes(d.source));
       const result = await buildIndex(ws, docs);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({ ok: true, ...result }, null, 2),
-          },
-        ],
-      };
+      return textContent({ ok: true, ...result });
     },
   );
 }
