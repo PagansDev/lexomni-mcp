@@ -16,7 +16,9 @@
   "engines": {
     "node": ">=18"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "bin": {
     "lexomni-mcp": "dist/index.js"
   },
@@ -26,18 +28,21 @@
     "dev": "tsup src/index.ts --format esm --watch",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["mcp", "model-context-protocol", "knowledge-management"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "knowledge-management"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "zod": "^4.0.0",
-    "better-sqlite3": "^11.8.1",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "sql.js-fts5": "^1.4.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.2",
-    "tsup": "^8.3.5",
     "@types/node": "^22.10.2",
-    "@types/better-sqlite3": "^7.6.12",
-    "@types/pdf-parse": "^1.1.4"
+    "@types/pdf-parse": "^1.1.4",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
   }
 }

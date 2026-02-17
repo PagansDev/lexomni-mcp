@@ -1,7 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
-import { openDb } from '../../indexing/sqlite.js';
+import { openDb } from '../../indexing/database.js';
+import { buildIndex } from '../../indexing/indexer.js';
+import { buildManifest } from '../../lexomni/manifest.js';
 import { getWorkspace } from '../workspaceResolver.js';
+
+async function readChunk(ws: Awaited<ReturnType<typeof getWorkspace>>, docId: string, idx: number) {
+  const db = await openDb(ws);
+  return db
+    .prepare(
+      `SELECT docId, chunkIndex, lineStart, lineEnd, text FROM chunks WHERE docId = ? AND chunkIndex = ?`,
+    )
+    .get(docId, idx);
+}
 
 export function readDocTool(server: McpServer) {
   server.registerTool(
@@ -16,14 +27,13 @@ export function readDocTool(server: McpServer) {
     },
     async ({ docId, chunkIndex, maxChars }) => {
       const ws = await getWorkspace(server);
-      const db = openDb(ws);
-
       const idx = chunkIndex ?? 0;
-      const row = db
-        .prepare(
-          `SELECT docId, chunkIndex, lineStart, lineEnd, text FROM chunks WHERE docId = ? AND chunkIndex = ?`,
-        )
-        .get(docId, idx);
+      let row = await readChunk(ws, docId, idx);
+
+      if (!row) {
+        await buildIndex(ws, buildManifest(ws));
+        row = await readChunk(ws, docId, idx);
+      }
 
       if (!row) {
         return {

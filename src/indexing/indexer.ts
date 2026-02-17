@@ -1,12 +1,12 @@
 import { DocInfo } from "../types/document.js";
 import { LexomniWorkspace } from "../lexomni/workspace.js";
-import { openDb } from "./sqlite.js";
+import { openDb } from "./database.js";
 import { readMarkdownText } from "../parsers/md.js";
 import { readPdfText } from "../parsers/pdf.js";
 import { chunkMarkdownByLines, chunkTextByChars } from "./chunking.js";
 
 export async function buildIndex(ws: LexomniWorkspace, docs: DocInfo[]) {
-  const db = openDb(ws);
+  const db = await openDb(ws);
 
   const upsertDoc = db.prepare(`
     INSERT INTO documents (docId, relPath, source, type, bytes, mtimeMs)
